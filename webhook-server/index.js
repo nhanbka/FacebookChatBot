@@ -8,13 +8,32 @@ const
     bodyParser = require('body-parser'),
     nconf = require('nconf'),
     mysql = require('mysql'),
+    io = require('socket.io-client'),
     app = express().use(bodyParser.json()); // creates express http server
+
 const mySQLdb = require('./middleware/mysqlconnector');
 
 nconf.argv().env();
 nconf.file({ file: 'config.json' });
 
-var conn = mysql.createConnection({
+
+// For socket.io communication
+const socket = io('http://localhost:3000', {
+    reconnectionDelayMax: 10000
+});
+socket.on("owner_answer", (data) => {
+    console.log("Index.js da nhan: ");
+    console.log(data);
+    // let parseData = JSON.stringify(data);
+    console.log(data.responseMess);
+    let response = {
+        "text": data.responseMess
+    };
+    callSendAPI(data.senderID, response);
+});
+// ----------------------------
+
+let conn = mysql.createConnection({
     host: "localhost",
     user: "chatbot",
     password: "1234",
@@ -98,7 +117,6 @@ app.get('/webhook', (req, res) => {
     }
 });
 
-
 // Handles messages events
 function handleMessage(msgSenderID, msgReceiverID, msgTime, readTime, msgText) {
 
@@ -123,8 +141,12 @@ function handleMessage(msgSenderID, msgReceiverID, msgTime, readTime, msgText) {
             response = {
                 "text": responseText
             }
+            socket.emit("unhandled_message", {
+                id: msgSenderID,
+                message: msgText
+            })
         }
-        mySQLdb.insert(conn, 'chatcontent', "m_" + uuidv4() + uuidv4(), msgReceiverID, msgSenderID, Date.now(), Date.now(), responseText);
+        mySQLdb.insert(conn, 'chatcontent', "m_" + uuidv4() + uuidv4(), msgReceiverID, msgSenderID, new Date(msgTime + 1), new Date(msgTime + 1), responseText);
     }
 
     // Sends the response message

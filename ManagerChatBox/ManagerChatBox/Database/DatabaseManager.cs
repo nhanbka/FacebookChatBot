@@ -20,22 +20,32 @@ namespace ManagerChatBox.Database
     }
     class DatabaseManager
     {
-        string myConnectionString = "server=localhost;database=chatbotdb;uid=chatbot;pwd=1234;";
+        /// <summary>
+        /// Configuration
+        /// </summary>
+        string server = "localhost";
+        string database = "chatbotdb";
+        string uid = "chatbot";
+        string pwd = "1234";
+        string port = "3307";
+
+
         MySqlConnection conn;
         string connectionString = null;
 
         public DatabaseManager()
         {
-            connectionString = "server=localhost;Port=3307;database=chatbotdb;uid=chatbot;pwd=1234;";
+            string myConnectionString = "server=" + server + ";database=" + database + ";uid=" + uid + ";pwd=" + pwd + ";";
+            connectionString = "server=" + server + ";Port=" + port + ";database=" + database + ";uid=" + uid + ";pwd=" + pwd + ";";
             conn = new MySqlConnection(connectionString);
             try
             {
                 conn.Open();
-                MessageBox.Show("Connection Open ! ");
+                //MessageBox.Show("Connection Open ! ");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Can not open connection ! ");
+                MessageBox.Show("Can not open connection !");
             }
         }
 
@@ -52,42 +62,24 @@ namespace ManagerChatBox.Database
         /// </summary>
         /// <param name="clientID"></param>
         /// <returns></returns>
-        public ArrayList[] getCustomerMessageById(String clientID)
+        public ArrayList getCustomerMessageById(String clientID)
         {
-            String query1 = "SELECT * FROM chatContent WHERE msgSenderID = '" + clientID + "' ORDER BY msgTime ASC";
-            //create command and assign the query and connection from the constructor
-            MySqlCommand cmd1 = new MySqlCommand(query1, conn);
-            ArrayList[] result = new ArrayList[2];
-            MySqlDataReader rdr1 = cmd1.ExecuteReader();
-            result[0] = new ArrayList();
-            while (rdr1.Read())
+            String query = "SELECT * FROM chatContent WHERE msgSenderID = '" + clientID + "' OR msgReceiverID='" + clientID + "' ORDER BY msgTime DESC";
+            MySqlCommand cmd = new MySqlCommand(query, conn);
+            ArrayList result = new ArrayList();
+            MySqlDataReader dataReader = cmd.ExecuteReader();
+            while (dataReader.Read())
             {
                 Record record = new Record();
-                record.msgID = rdr1.GetString(0);
-                record.msgSenderID = rdr1.GetString(1);
-                record.msgReceiverID = rdr1.GetString(2);
-                record.msgTime = rdr1.GetString(3);
-                record.readTime = rdr1.GetString(4);
-                record.msgText = rdr1.GetString(5);
-                result[0].Add(record);
+                record.msgID = dataReader.GetString(0);
+                record.msgSenderID = dataReader.GetString(1);
+                record.msgReceiverID = dataReader.GetString(2);
+                record.msgTime = dataReader.GetString(3);
+                record.readTime = dataReader.GetString(4);
+                record.msgText = dataReader.GetString(5);
+                result.Add(record);
             }
-
-            String query2 = "SELECT * FROM chatContent WHERE msgReceiverID = '" + clientID + "' ORDER BY msgTime ASC";
-            //create command and assign the query and connection from the constructor
-            MySqlCommand cmd2 = new MySqlCommand(query1, conn);
-            MySqlDataReader rdr2 = cmd2.ExecuteReader();
-            result[1] = new ArrayList();
-            while (rdr2.Read())
-            {
-                Record record = new Record();
-                record.msgID = rdr2.GetString(0);
-                record.msgSenderID = rdr2.GetString(1);
-                record.msgReceiverID = rdr2.GetString(2);
-                record.msgTime = rdr2.GetString(3);
-                record.readTime = rdr2.GetString(4);
-                record.msgText = rdr2.GetString(5);
-                result[1].Add(record);
-            }
+            dataReader.Close();
 
             return result;
         }

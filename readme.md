@@ -4,32 +4,55 @@
 - [NodeJS 10.16.3](https://nodejs.org/download/release/v10.16.3/)
 - [ngrok](https://ngrok.com/download)
 
-## Running Instruction
-<!-- ```bash
-cd original-coast-clothing
-```
-Setup in .env with 4 fields:
-- PAGE_ID
-- APP_ID
-- PAGE_ACCESS_TOKEN
-- APP_SECRET
-- **VERIFY_TOKEN** (This is required to ensure your webhook is authentic and working)
+## Dependencies
+### 1. webhook-server
+- socket.io
+- nodemon
+- express
+- mysql
+- nconf
+- uuid
+- request
 ```bash
-node app.js
-``` -->
-<!-- *Application can now be accessed at http://localhost:3000* -->
+npm install --save socket.io
+npm install --save nodemon
+npm install --save express
+npm install --save mysql
+npm install --save nconf
+npm install --save uuid
+npm install --save request
+```
+### 2. io_server
+- socket.io
+- nodemon
+- express
+```bash
+npm install --save socket.io
+npm install --save nodemon
+npm install --save express
+```
+### 3. ManagerChatBox
+- [SocketIOClient](https://github.com/doghappy/socket.io-client-csharp)
+- [NewtonSoft.Json](https://www.newtonsoft.com/json)
+
+## Running Instruction
 
 ```bash
 cd webhook-server
-node index.js
+npm run start
 ```
 
 **Now we need to make application accessible from Internet**
 ```bash
 cd ..
 ./ngrok authtoken [your_authtoken]
-node ./webhook-server   # Run webhook server on 1337 port
 # Get your authtoken at https://dashboard.ngrok.com/get-started/setup (need to sign in)
 ./ngrok http 1337 # Tunnel with port 1337
 ```
 Read the Forwarding IP (with https protocol) => Add setup webhook url with random string VERIFY_TOKEN.
+
+**Enable socket.io server**
+```bash
+cd io_server
+npm run start
+```
