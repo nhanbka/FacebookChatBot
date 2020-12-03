@@ -11,6 +11,7 @@
     "license": "ISC",
     "dependencies": {
         "body-parser": "^1.19.0",
+        "collections": "^5.1.12",
         "express": "^4.17.1",
         "mysql": "^2.18.1",
         "nconf": "^0.10.0",

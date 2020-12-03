@@ -5,7 +5,7 @@ var con = mysql.createConnection({
     host: "localhost",
     user: "chatbot",
     password: "1234",
-    port: 3307,
+    port: 3306,
     database: "chatbotdb"
 });
 

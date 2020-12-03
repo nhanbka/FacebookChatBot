@@ -9,20 +9,32 @@ const
     nconf = require('nconf'),
     mysql = require('mysql'),
     io = require('socket.io-client'),
+    https = require('https'),
+    List = require("collections/list"),
     app = express().use(bodyParser.json()); // creates express http server
 
 const mySQLdb = require('./middleware/mysqlconnector');
-
+let curentUnhandledUser = new List();
 nconf.argv().env();
 nconf.file({ file: 'config.json' });
 
+let conn = mysql.createConnection({
+    host: "localhost",
+    user: "chatbot",
+    password: "1234",
+    port: nconf.get('DATABASE_PORT'),
+    database: "chatbotdb"
+});
+conn.connect(function(err) {
+    if (err) throw err;
+    console.log("MySQL database connected at port " + nconf.get('DATABASE_PORT') + "!");
+});
 
 // For socket.io communication
 const socket = io('http://localhost:3000', {
     reconnectionDelayMax: 10000
 });
 socket.on("owner_answer", (data) => {
-    console.log("Index.js da nhan: ");
     console.log(data);
     // let parseData = JSON.stringify(data);
     console.log(data.responseMess);
@@ -33,20 +45,8 @@ socket.on("owner_answer", (data) => {
 });
 // ----------------------------
 
-let conn = mysql.createConnection({
-    host: "localhost",
-    user: "chatbot",
-    password: "1234",
-    port: 3307,
-    database: "chatbotdb"
-});
-conn.connect(function(err) {
-    if (err) throw err;
-    console.log("MySQL database connected!");
-});
-
 // Sets server port and logs message on success
-app.listen(process.env.PORT || nconf.get('PORT'), () => console.log('webhook is listening'));
+app.listen(process.env.PORT || nconf.get('PORT'), () => console.log('webhook is listening at port ' + nconf.get('PORT')));
 
 // Creates the endpoint for our webhook 
 app.post('/webhook', (req, res) => {
@@ -104,7 +104,6 @@ app.get('/webhook', (req, res) => {
 
     // Checks if a token and mode is in the query string of the request
     if (mode && token) {
-
         // Checks the mode and token sent is correct
         if (mode === 'subscribe' && token === VERIFY_TOKEN) {
             // Responds with the challenge token from the request
@@ -117,9 +116,15 @@ app.get('/webhook', (req, res) => {
     }
 });
 
+socket.on("finish_handle", (data) => {
+    console.log(data);
+    if (curentUnhandledUser.has(data.fininshID))
+        curentUnhandledUser.delete(data.fininshID);
+    console.log(curentUnhandledUser);
+});
+
 // Handles messages events
 function handleMessage(msgSenderID, msgReceiverID, msgTime, readTime, msgText) {
-
     let response;
 
     // Check if the message contains text
@@ -136,21 +141,23 @@ function handleMessage(msgSenderID, msgReceiverID, msgTime, readTime, msgText) {
             response = {
                 "text": responseText
             }
+            callSendAPI(msgSenderID, response);
         } else {
-            responseText = `For this question, I will forward to the supporter.`
-            response = {
-                "text": responseText
+            if (!curentUnhandledUser.has(msgSenderID)) {
+                responseText = `For this question, I will forward to the supporter.`
+                response = {
+                    "text": responseText
+                }
+                curentUnhandledUser.add(msgSenderID);
+                callSendAPI(msgSenderID, response);
             }
             socket.emit("unhandled_message", {
                 id: msgSenderID,
                 message: msgText
             })
-        }
-        mySQLdb.insert(conn, 'chatcontent', "m_" + uuidv4() + uuidv4(), msgReceiverID, msgSenderID, new Date(msgTime + 1), new Date(msgTime + 1), responseText);
-    }
 
-    // Sends the response message
-    callSendAPI(msgSenderID, response);
+        }
+    }
 }
 
 // Handles messaging_postbacks events
@@ -184,5 +191,7 @@ function callSendAPI(sender_psid, response) {
             } else {
                 console.error("Unable to send message:" + err);
             }
-        });
+        }
+    );
+    mySQLdb.insert(conn, 'chatcontent', "m_" + uuidv4() + uuidv4(), "101714355046687", sender_psid, new Date(Date.now() + 1000), new Date(Date.now() + 1000), response.text);
 }

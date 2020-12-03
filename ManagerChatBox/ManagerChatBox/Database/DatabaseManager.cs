@@ -1,23 +1,16 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using MySql.Data.MySqlClient;
+using ManagerChatBox.Model;
 
 namespace ManagerChatBox.Database
 {
-    class Record
-    {
-        public String msgID;
-        public String msgSenderID;
-        public String msgReceiverID;
-        public String msgTime;
-        public String readTime;
-        public String msgText;
-    }
     class DatabaseManager
     {
         /// <summary>
@@ -27,8 +20,7 @@ namespace ManagerChatBox.Database
         string database = "chatbotdb";
         string uid = "chatbot";
         string pwd = "1234";
-        string port = "3307";
-
+        string port = "3306";
 
         MySqlConnection conn;
         string connectionString = null;
@@ -64,20 +56,24 @@ namespace ManagerChatBox.Database
         /// <returns></returns>
         public ArrayList getCustomerMessageById(String clientID)
         {
-            String query = "SELECT * FROM chatContent WHERE msgSenderID = '" + clientID + "' OR msgReceiverID='" + clientID + "' ORDER BY msgTime DESC";
-            MySqlCommand cmd = new MySqlCommand(query, conn);
+            String query = "SELECT * FROM chatContent WHERE msgSenderID = '" + clientID + "' OR msgReceiverID='" + clientID + "' ORDER BY msgTime ASC";
             ArrayList result = new ArrayList();
+            if (conn.State == ConnectionState.Closed)
+            {
+                return result;
+            }
+            MySqlCommand cmd = new MySqlCommand(query, conn);
             MySqlDataReader dataReader = cmd.ExecuteReader();
             while (dataReader.Read())
             {
-                Record record = new Record();
-                record.msgID = dataReader.GetString(0);
-                record.msgSenderID = dataReader.GetString(1);
-                record.msgReceiverID = dataReader.GetString(2);
-                record.msgTime = dataReader.GetString(3);
-                record.readTime = dataReader.GetString(4);
-                record.msgText = dataReader.GetString(5);
-                result.Add(record);
+                Model.Message mess = new Model.Message();
+                mess.msgID = dataReader.GetString(0);
+                mess.msgSenderID = dataReader.GetString(1);
+                mess.msgReceiverID = dataReader.GetString(2);
+                mess.msgTime = dataReader.GetString(3);
+                mess.readTime = dataReader.GetString(4);
+                mess.msgText = dataReader.GetString(5);
+                result.Add(mess);
             }
             dataReader.Close();
 

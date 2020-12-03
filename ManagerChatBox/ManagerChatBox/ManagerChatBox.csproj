@@ -77,6 +77,14 @@
     <Reference Include="TelerikCommon, Version=2020.3.1020.40, Culture=neutral, PublicKeyToken=5bb2a467cbec794e" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Component\QuickDisplayMess.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Component\QuickDisplayMess.Designer.cs">
+      <DependentUpon>QuickDisplayMess.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Config.cs" />
+    <Compile Include="Connection\HTTPRequestManager.cs" />
     <Compile Include="Connection\SocketIOManager.cs" />
     <Compile Include="Database\DatabaseManager.cs" />
     <Compile Include="Form1.cs">
@@ -85,8 +93,13 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="Model\Message.cs" />
+    <Compile Include="Model\User.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Component\QuickDisplayMess.resx">
+      <DependentUpon>QuickDisplayMess.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>

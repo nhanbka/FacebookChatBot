@@ -11,7 +11,10 @@ io.on('connection', (socket) => {
         console.log("New unhandled message: ");
         console.log(data.id);
         console.log(data.message);
-        io.sockets.emit("new_unhandled_id", data.id);
+        io.sockets.emit("new_unhandled_id", {
+            id: data.id,
+            message: data.message
+        });
     });
     socket.on("hi", data => {
         console.log(data);
@@ -20,6 +23,10 @@ io.on('connection', (socket) => {
         console.log(data);
         io.sockets.emit("owner_answer", JSON.parse(data));
         // console.log(data);
+    })
+    socket.on("finish_handle", data => {
+        console.log(data);
+        io.sockets.emit("finish_handle", JSON.parse(data));
     })
 });
 
