@@ -36,8 +36,8 @@
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.mainPanel = new System.Windows.Forms.Panel();
             this.mainPanelBottom = new System.Windows.Forms.Panel();
-            this.pictureBox = new System.Windows.Forms.PictureBox();
             this.btnFinishChat = new System.Windows.Forms.Button();
+            this.pictureBox = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.radChatBox)).BeginInit();
             this.flowLayoutUserManager.SuspendLayout();
             this.panel1.SuspendLayout();
@@ -62,11 +62,11 @@
             // radChatBox
             // 
             this.radChatBox.AvatarSize = new System.Drawing.SizeF(19.6F, 15F);
-            this.radChatBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.radChatBox.Location = new System.Drawing.Point(0, 0);
+            this.radChatBox.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.radChatBox.Location = new System.Drawing.Point(0, 41);
             this.radChatBox.Margin = new System.Windows.Forms.Padding(2);
             this.radChatBox.Name = "radChatBox";
-            this.radChatBox.Size = new System.Drawing.Size(750, 466);
+            this.radChatBox.Size = new System.Drawing.Size(750, 425);
             this.radChatBox.TabIndex = 3;
             this.radChatBox.Text = "radChat1";
             this.radChatBox.TimeSeparatorInterval = System.TimeSpan.Parse("1.00:00:00");
@@ -127,12 +127,25 @@
             this.mainPanelBottom.Controls.Add(this.btnFinishChat);
             this.mainPanelBottom.Controls.Add(this.pictureBox);
             this.mainPanelBottom.Controls.Add(this.lblUser);
-            this.mainPanelBottom.Dock = System.Windows.Forms.DockStyle.Top;
-            this.mainPanelBottom.Location = new System.Drawing.Point(0, 0);
+            this.mainPanelBottom.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.mainPanelBottom.Location = new System.Drawing.Point(0, 2);
             this.mainPanelBottom.Margin = new System.Windows.Forms.Padding(2);
             this.mainPanelBottom.Name = "mainPanelBottom";
-            this.mainPanelBottom.Size = new System.Drawing.Size(750, 41);
+            this.mainPanelBottom.Size = new System.Drawing.Size(750, 39);
             this.mainPanelBottom.TabIndex = 4;
+            // 
+            // btnFinishChat
+            // 
+            this.btnFinishChat.BackColor = System.Drawing.SystemColors.MenuBar;
+            this.btnFinishChat.Dock = System.Windows.Forms.DockStyle.Right;
+            this.btnFinishChat.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.btnFinishChat.Location = new System.Drawing.Point(648, 0);
+            this.btnFinishChat.Name = "btnFinishChat";
+            this.btnFinishChat.Size = new System.Drawing.Size(102, 39);
+            this.btnFinishChat.TabIndex = 4;
+            this.btnFinishChat.Text = "Finish Chat";
+            this.btnFinishChat.UseVisualStyleBackColor = false;
+            this.btnFinishChat.Click += new System.EventHandler(this.button1_Click);
             // 
             // pictureBox
             // 
@@ -143,19 +156,6 @@
             this.pictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox.TabIndex = 3;
             this.pictureBox.TabStop = false;
-            // 
-            // btnFinishChat
-            // 
-            this.btnFinishChat.BackColor = System.Drawing.SystemColors.MenuBar;
-            this.btnFinishChat.Dock = System.Windows.Forms.DockStyle.Right;
-            this.btnFinishChat.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnFinishChat.Location = new System.Drawing.Point(648, 0);
-            this.btnFinishChat.Name = "btnFinishChat";
-            this.btnFinishChat.Size = new System.Drawing.Size(102, 41);
-            this.btnFinishChat.TabIndex = 4;
-            this.btnFinishChat.Text = "Finish Chat";
-            this.btnFinishChat.UseVisualStyleBackColor = false;
-            this.btnFinishChat.Click += new System.EventHandler(this.button1_Click);
             // 
             // Form1
             // 

@@ -22,13 +22,23 @@ namespace ManagerChatBox
         List<string> userManager;
         SocketIOManager socketIOManager;
         public string curentUserId = "";
+        DatabaseManager databaseManager;
+
         public Form1()
         {
             InitializeComponent();
             userManager = new List<string>();
-            //flowLayoutUserManager.Controls.Clear();
-            socketIOManager = new SocketIOManager(ref radChatBox, this);
-            radChatBox.Author = new Author(Image.FromFile(@".\temp\manager_ava.png"), "Lê Trọng Nhân");
+            databaseManager = new DatabaseManager();                        // Init connection with database
+            socketIOManager = new SocketIOManager(ref radChatBox, this);    // Init connection with socketIO server
+            try
+            {
+                radChatBox.Author = new Author(Image.FromFile(@".\temp\manager_ava.png"), "Lê Trọng Nhân");
+            } catch (FileNotFoundException fileNotFound)
+            {
+                Console.WriteLine("Cannot find file manager_ava.png in temp folder");
+                radChatBox.Author = new Author(null, "Lê Trọng Nhân");
+            }
+            
             radChatBox.AutoAddUserMessages = false;
             radChatBox.SendMessage += radChatBox_SendMessage;
             //addNewUserToPanel("3181701225285372");
@@ -56,6 +66,7 @@ namespace ManagerChatBox
             }
             userManager.Add(userId);
             QuickDisplayMess quickDisplayMess = new QuickDisplayMess(userId);
+            quickDisplayMess.lastMessTime = "Last mess:" + databaseManager.getLastMessageTime(userId);
             quickDisplayMess.Name = "quickDisplayMess" + userId;
             flowLayoutUserManager.Controls.Add(quickDisplayMess);
             quickDisplayMess.MouseClick += new MouseEventHandler(QuickDisplayMess_MouseClick);
@@ -63,7 +74,6 @@ namespace ManagerChatBox
 
         void QuickDisplayMess_MouseClick(object sender, MouseEventArgs e)
         {
-            DatabaseManager databaseManager = new DatabaseManager();
             curentUserId = ((QuickDisplayMess)sender).userID;
             guest = new Author(Image.FromFile(@".\temp\" + curentUserId + ".jpg"), curentUserId);
             lblUser.Text = ((QuickDisplayMess)sender).userName;

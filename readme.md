@@ -21,6 +21,7 @@ npm install --save mysql
 npm install --save nconf
 npm install --save uuid
 npm install --save request
+npm install collections --save
 ```
 ### 2. io_server
 - socket.io

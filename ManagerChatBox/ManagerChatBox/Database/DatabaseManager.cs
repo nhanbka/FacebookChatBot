@@ -79,5 +79,23 @@ namespace ManagerChatBox.Database
 
             return result;
         }
+
+        public String getLastMessageTime(String clientID)
+        {
+            String query = "SELECT msgTime FROM chatContent WHERE msgSenderID = '" + clientID + "' OR msgReceiverID='" + clientID + "' ORDER BY msgTime DESC LIMIT 1";
+            String result = "";
+            if (conn.State == ConnectionState.Closed)
+            {
+                return result;
+            }
+            MySqlCommand cmd = new MySqlCommand(query, conn);
+            MySqlDataReader dataReader = cmd.ExecuteReader();
+            while (dataReader.Read())
+            {
+                result = dataReader.GetString(0);
+            }
+            dataReader.Close();
+            return result;
+        }
     }
 }

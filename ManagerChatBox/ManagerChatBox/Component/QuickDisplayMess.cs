@@ -15,6 +15,10 @@ namespace ManagerChatBox.Component
         // Declare parameter
         public string userID;
         public string userName;
+        public string lastMessTime {
+            set { lblTimeStamp.Text = value; }
+            get { return lblTimeStamp.Text;  }
+        }
 
         // Declare function
         public QuickDisplayMess()
@@ -38,9 +42,9 @@ namespace ManagerChatBox.Component
                     client.Dispose();
                 }
             }
-            this.avatarImage.Image = Image.FromFile(filePath);
+            avatarImage.Image = Image.FromFile(filePath);
             userName = newUser.last_name + " " + newUser.first_name;
-            this.lblUsername.Text = userName;
+            lblUsername.Text = userName;
         }
 
         private void QuickDisplayMess_MouseClick(object sender, MouseEventArgs e)
