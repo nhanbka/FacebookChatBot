@@ -80,6 +80,32 @@ namespace ManagerChatBox.Database
             return result;
         }
 
+        public ArrayList getCustomerMessageByIdWithOffset(String clientID, int offset)
+        {
+            String query = "SELECT * FROM chatContent WHERE msgSenderID = '" + clientID + "' OR msgReceiverID='" + clientID + "' ORDER BY msgTime ASC LIMIT 10 OFFSET " + offset.ToString();
+            ArrayList result = new ArrayList();
+            if (conn.State == ConnectionState.Closed)
+            {
+                return result;
+            }
+            MySqlCommand cmd = new MySqlCommand(query, conn);
+            MySqlDataReader dataReader = cmd.ExecuteReader();
+            while (dataReader.Read())
+            {
+                Model.Message mess = new Model.Message();
+                mess.msgID = dataReader.GetString(0);
+                mess.msgSenderID = dataReader.GetString(1);
+                mess.msgReceiverID = dataReader.GetString(2);
+                mess.msgTime = dataReader.GetString(3);
+                mess.readTime = dataReader.GetString(4);
+                mess.msgText = dataReader.GetString(5);
+                result.Add(mess);
+            }
+            dataReader.Close();
+
+            return result;
+        }
+
         public String getLastMessageTime(String clientID)
         {
             String query = "SELECT msgTime FROM chatContent WHERE msgSenderID = '" + clientID + "' OR msgReceiverID='" + clientID + "' ORDER BY msgTime DESC LIMIT 1";

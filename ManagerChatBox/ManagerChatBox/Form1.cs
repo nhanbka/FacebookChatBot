@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Threading;
 
 namespace ManagerChatBox
 {
@@ -23,6 +24,9 @@ namespace ManagerChatBox
         SocketIOManager socketIOManager;
         public string curentUserId = "";
         DatabaseManager databaseManager;
+        int offset = 0;
+        bool scrollWatcherThreadEnd = false, dataEOF = false;
+        Thread scrollerWatcher;
 
         public Form1()
         {
@@ -48,6 +52,7 @@ namespace ManagerChatBox
         {
             ChatTextMessage mess = new ChatTextMessage(newMsg, guest, DateTime.UtcNow);
             radChatBox.AddMessage(mess);
+            offset++;
         }
 
         private void radChatBox_SendMessage(object sender, SendMessageEventArgs e)
@@ -55,6 +60,7 @@ namespace ManagerChatBox
             ChatTextMessage textMessage = e.Message as ChatTextMessage;
             radChatBox.AddMessage(textMessage);
             socketIOManager.SendMessage(textMessage.Message, curentUserId);
+            //offset++;
         }
 
         public void addNewUserToPanel(string userId)
@@ -74,28 +80,34 @@ namespace ManagerChatBox
 
         void QuickDisplayMess_MouseClick(object sender, MouseEventArgs e)
         {
-            curentUserId = ((QuickDisplayMess)sender).userID;
-            guest = new Author(Image.FromFile(@".\temp\" + curentUserId + ".jpg"), curentUserId);
-            lblUser.Text = ((QuickDisplayMess)sender).userName;
-            pictureBox.Image = Image.FromFile(@".\temp\" + curentUserId + ".jpg");
-
-            ArrayList arrResult = databaseManager.getCustomerMessageById(curentUserId);
-            foreach (Model.Message record in arrResult)
+            if(curentUserId != ((QuickDisplayMess)sender).userID)
             {
-                ChatTextMessage mess;
-                if (record.msgSenderID.Equals(Config.ownerID))
-                    mess = new ChatTextMessage(record.msgText, radChatBox.Author, DateTime.Parse(record.msgTime));
-                else
-                {
-                    mess = new ChatTextMessage(record.msgText, guest, DateTime.Parse(record.msgTime));
-                }
-                radChatBox.AddMessage(mess);
-            }
-        }
+                radChatBox.ChatElement.MessagesViewElement.Items.Clear();
+                offset = 0;
+                dataEOF = false;
+                curentUserId = ((QuickDisplayMess)sender).userID;
+                guest = new Author(Image.FromFile(@".\temp\" + curentUserId + ".jpg"), curentUserId);
+                lblUser.Text = ((QuickDisplayMess)sender).userName;
+                pictureBox.Image = Image.FromFile(@".\temp\" + curentUserId + ".jpg");
 
-        private void radChatBox_Scroll(object sender, ScrollEventArgs e)
-        {
-            MessageBox.Show(radChatBox.ChatElement.Text);
+                //ArrayList arrResult = databaseManager.getCustomerMessageById(curentUserId);
+                ArrayList arrResult = databaseManager.getCustomerMessageById(curentUserId);
+                int numOfResult = arrResult.Count;
+                //for(int i = numOfResult - 1; i >=0; i--)
+                foreach (Model.Message record in arrResult)
+                {
+                    //Model.Message record = (Model.Message)arrResult[i];
+                    ChatTextMessage mess;
+                    if (record.msgSenderID.Equals(Config.ownerID))
+                        mess = new ChatTextMessage(record.msgText, radChatBox.Author, DateTime.Parse(record.msgTime));
+                    else
+                    {
+                        mess = new ChatTextMessage(record.msgText, guest, DateTime.Parse(record.msgTime));
+                    }
+                    radChatBox.AddMessage(mess);
+                }
+                offset += numOfResult;
+            }
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -112,6 +124,41 @@ namespace ManagerChatBox
                 userManager.Remove(curentUserId);
                 curentUserId = "";
             }
+        }
+
+        //private void ChangePosition(int numOfResult)
+        //{
+        //    ArrayList arrayList = new ArrayList();
+        //    arrayList.AddRange(radChatBox.ChatElement.MessagesViewElement.Items);
+        //    ArrayList newElement = new ArrayList(numOfResult);
+        //    for(int i = arrayList.Count - numOfResult - 1, cur = 0; cur < numOfResult ; i++, cur--)
+        //    {
+        //        // copy last "numOfResult" element to array
+        //        newElement[cur] = arrayList[i];
+        //    }
+        //    // create newDesiredArray
+        //    for(int i = arrayList.Count - 1, cur = arrayList.Count - numOfResult - 1; cur >= 0; i--, cur--)
+        //    {
+        //        arrayList[i] = arrayList[cur];
+        //    }
+        //    for(int i = 0; i < numOfResult; i++)
+        //    {
+        //        arrayList[i] = newElement[i];
+        //    }
+        //    for(int i = 0; i < arrayList.Count; i++)
+        //    {
+        //        radChatBox.ChatElement.MessagesViewElement.Items[i] = (BaseChatDataItem)arrayList[i];
+        //    }
+        //}
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            scrollWatcherThreadEnd = true;
+            scrollerWatcher.Abort();
         }
     }
 }

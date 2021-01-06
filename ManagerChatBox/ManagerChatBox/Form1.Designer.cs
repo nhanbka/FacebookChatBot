@@ -70,7 +70,6 @@
             this.radChatBox.TabIndex = 3;
             this.radChatBox.Text = "radChat1";
             this.radChatBox.TimeSeparatorInterval = System.TimeSpan.Parse("1.00:00:00");
-            this.radChatBox.Scroll += new System.Windows.Forms.ScrollEventHandler(this.radChatBox_Scroll);
             // 
             // flowLayoutUserManager
             // 
@@ -169,6 +168,8 @@
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "Form1";
             this.Text = "ManagerChatBox";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
+            this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.radChatBox)).EndInit();
             this.flowLayoutUserManager.ResumeLayout(false);
             this.panel1.ResumeLayout(false);

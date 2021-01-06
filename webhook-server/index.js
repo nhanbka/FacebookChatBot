@@ -11,6 +11,7 @@ const
     io = require('socket.io-client'),
     https = require('https'),
     List = require("collections/list"),
+    axios = require('axios'),
     app = express().use(bodyParser.json()); // creates express http server
 
 const mySQLdb = require('./middleware/mysqlconnector');
@@ -75,9 +76,13 @@ app.post('/webhook', (req, res) => {
                 let messsageTime = webhook_event.timestamp;
                 let deliveredTime = entry.time;
                 let messageText = webhook_event.message.text;
-                mySQLdb.insert(conn, 'chatcontent', messageID, sender_psid, receiver_psid, messsageTime, deliveredTime, messageText);
-
-                handleMessage(sender_psid, receiver_psid, messsageTime, deliveredTime, messageText);
+                try {
+                    mySQLdb.insert(conn, 'chatcontent', messageID, sender_psid, receiver_psid, messsageTime, deliveredTime, messageText);
+                } catch (err) {
+                    console.log(err)
+                } finally {
+                    handleMessage(sender_psid, receiver_psid, messsageTime, deliveredTime, messageText);
+                }
             } else if (webhook_event.postback) {
                 handlePostback(sender_psid, webhook_event.postback);
             }
@@ -128,35 +133,71 @@ function handleMessage(msgSenderID, msgReceiverID, msgTime, readTime, msgText) {
     let response;
 
     // Check if the message contains text
+    console.log(msgText);
     if (msgText) {
         let responseText;
         // Create the payload for a basic text message
-        if (msgText.toLowerCase().includes("start")) {
-            responseText = `Hello. Welcome to the chatbot`;
-            response = {
-                "text": responseText
-            }
-        } else if (msgText.toLowerCase().includes("price")) {
-            responseText = `Please select the product code you want to consult the price.`;
-            response = {
-                "text": responseText
-            }
-            callSendAPI(msgSenderID, response);
-        } else {
-            if (!curentUnhandledUser.has(msgSenderID)) {
-                responseText = `For this question, I will forward to the supporter.`
-                response = {
-                    "text": responseText
+        var data = JSON.stringify({ 'text': msgText });
+        var config = {
+            method: 'post',
+            url: 'http://127.0.0.1:5000/CategorizeText',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: data
+        };
+        axios(config)
+            .then(res => {
+                let resText = res.data;
+                if (resText != 'Tư vấn chăm sóc khách hàng') {
+                    response = {
+                        "text": resText
+                    }
+                    callSendAPI(msgSenderID, response);
+                } else {
+                    if (!curentUnhandledUser.has(msgSenderID)) {
+                        responseText = `For this question, I will forward to the supporter.`
+                        response = {
+                            "text": responseText
+                        }
+                        curentUnhandledUser.add(msgSenderID);
+                        callSendAPI(msgSenderID, response);
+                    }
+                    socket.emit("unhandled_message", {
+                        id: msgSenderID,
+                        message: msgText
+                    })
                 }
-                curentUnhandledUser.add(msgSenderID);
-                callSendAPI(msgSenderID, response);
-            }
-            socket.emit("unhandled_message", {
-                id: msgSenderID,
-                message: msgText
             })
-
-        }
+            .catch(err => {
+                console.log(err);
+            })
+            // if (msgText.toLowerCase().includes("start")) {
+            //     responseText = `Hello. Welcome to the chatbot`;
+            //     response = {
+            //         "text": responseText
+            //     }
+            //     callSendAPI(msgSenderID, response);
+            // } else if (msgText.toLowerCase().includes("price")) {
+            //     responseText = `Please select the product code you want to consult the price.`;
+            //     response = {
+            //         "text": responseText
+            //     }
+            //     callSendAPI(msgSenderID, response);
+            // } else {
+            //     if (!curentUnhandledUser.has(msgSenderID)) {
+            //         responseText = `For this question, I will forward to the supporter.`
+            //         response = {
+            //             "text": responseText
+            //         }
+            //         curentUnhandledUser.add(msgSenderID);
+            //         callSendAPI(msgSenderID, response);
+            //     }
+            //     socket.emit("unhandled_message", {
+            //         id: msgSenderID,
+            //         message: msgText
+            //     })
+            // }
     }
 }
 
@@ -174,7 +215,7 @@ function callSendAPI(sender_psid, response) {
         },
         "message": response
     }
-
+    console.log(request_body);
     // Send the HTTP request to the Messenger Platform
     request({
             "uri": "https://graph.facebook.com/v2.6/me/messages",
