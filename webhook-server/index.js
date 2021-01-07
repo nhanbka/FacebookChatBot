@@ -2,52 +2,40 @@
 
 // Imports dependencies and set up http server
 const { v4: uuidv4 } = require('uuid');
-const
-    express = require('express'),
-    request = require('request'),
-    bodyParser = require('body-parser'),
-    nconf = require('nconf'),
-    mysql = require('mysql'),
-    io = require('socket.io-client'),
-    https = require('https'),
-    List = require("collections/list"),
-    axios = require('axios'),
-    app = express().use(bodyParser.json()); // creates express http server
+const express = require('express');
+const request = require('request');
+const nconf = require('nconf');
+const mysql = require('mysql');
+const io = require('socket.io-client');
+const List = require("collections/list");
+const axios = require('axios');
+const bodyParser = require('body-parser');
+const app = express().use(bodyParser.json()); // creates express http server
 
 const mySQLdb = require('./middleware/mysqlconnector');
 let curentUnhandledUser = new List();
 nconf.argv().env();
 nconf.file({ file: 'config.json' });
 
-let conn = mysql.createConnection({
-    host: "localhost",
-    user: "chatbot",
-    password: "1234",
-    port: nconf.get('DATABASE_PORT'),
-    database: "chatbotdb"
-});
-conn.connect(function(err) {
-    if (err) throw err;
-    console.log("MySQL database connected at port " + nconf.get('DATABASE_PORT') + "!");
-});
-
 // For socket.io communication
 const socket = io('http://localhost:3000', {
-    reconnectionDelayMax: 10000
+    reconnectionDelayMax: 5000
 });
-socket.on("owner_answer", (data) => {
-    console.log(data);
-    // let parseData = JSON.stringify(data);
+socket.on("owner_answer", data => {
     console.log(data.responseMess);
-    let response = {
-        "text": data.responseMess
-    };
-    callSendAPI(data.senderID, response);
+    let response = { "text": data.responseMess };
+    sendFacebookMess(data.senderID, response);
+});
+socket.on("finish_handle", data => {
+    console.log("Finish Handle" + data.fininshID);
+    if (curentUnhandledUser.has(data.fininshID))
+        curentUnhandledUser.delete(data.fininshID);
 });
 // ----------------------------
 
 // Sets server port and logs message on success
-app.listen(process.env.PORT || nconf.get('PORT'), () => console.log('webhook is listening at port ' + nconf.get('PORT')));
+app.listen(process.env.PORT || nconf.get('PORT'),
+    () => console.log('webhook is listening at port ' + nconf.get('PORT')));
 
 // Creates the endpoint for our webhook 
 app.post('/webhook', (req, res) => {
@@ -61,7 +49,6 @@ app.post('/webhook', (req, res) => {
             // Gets the message. entry.messaging is an array, but 
             // will only ever contain one message, so we get index 0
             let webhook_event = entry.messaging[0];
-            console.log("------------------------------");
             console.log("------------------------------");
             console.log("Receive Message:\n");
             console.log(webhook_event);
@@ -77,7 +64,7 @@ app.post('/webhook', (req, res) => {
                 let deliveredTime = entry.time;
                 let messageText = webhook_event.message.text;
                 try {
-                    mySQLdb.insert(conn, 'chatcontent', messageID, sender_psid, receiver_psid, messsageTime, deliveredTime, messageText);
+                    mySQLdb.insert('chatcontent', messageID, sender_psid, receiver_psid, messsageTime, deliveredTime, messageText);
                 } catch (err) {
                     console.log(err)
                 } finally {
@@ -121,13 +108,6 @@ app.get('/webhook', (req, res) => {
     }
 });
 
-socket.on("finish_handle", (data) => {
-    console.log(data);
-    if (curentUnhandledUser.has(data.fininshID))
-        curentUnhandledUser.delete(data.fininshID);
-    console.log(curentUnhandledUser);
-});
-
 // Handles messages events
 function handleMessage(msgSenderID, msgReceiverID, msgTime, readTime, msgText) {
     let response;
@@ -146,6 +126,7 @@ function handleMessage(msgSenderID, msgReceiverID, msgTime, readTime, msgText) {
             },
             data: data
         };
+        // Send message to NLP API Server to handle message
         axios(config)
             .then(res => {
                 let resText = res.data;
@@ -153,15 +134,15 @@ function handleMessage(msgSenderID, msgReceiverID, msgTime, readTime, msgText) {
                     response = {
                         "text": resText
                     }
-                    callSendAPI(msgSenderID, response);
+                    sendFacebookMess(msgSenderID, response);
                 } else {
                     if (!curentUnhandledUser.has(msgSenderID)) {
-                        responseText = `For this question, I will forward to the supporter.`
+                        responseText = `Câu hỏi sẽ được chuyển qua cho hỗ trợ viên, bạn vui lòng đợt trong ít phút.`
                         response = {
                             "text": responseText
                         }
                         curentUnhandledUser.add(msgSenderID);
-                        callSendAPI(msgSenderID, response);
+                        sendFacebookMess(msgSenderID, response);
                     }
                     socket.emit("unhandled_message", {
                         id: msgSenderID,
@@ -172,32 +153,6 @@ function handleMessage(msgSenderID, msgReceiverID, msgTime, readTime, msgText) {
             .catch(err => {
                 console.log(err);
             })
-            // if (msgText.toLowerCase().includes("start")) {
-            //     responseText = `Hello. Welcome to the chatbot`;
-            //     response = {
-            //         "text": responseText
-            //     }
-            //     callSendAPI(msgSenderID, response);
-            // } else if (msgText.toLowerCase().includes("price")) {
-            //     responseText = `Please select the product code you want to consult the price.`;
-            //     response = {
-            //         "text": responseText
-            //     }
-            //     callSendAPI(msgSenderID, response);
-            // } else {
-            //     if (!curentUnhandledUser.has(msgSenderID)) {
-            //         responseText = `For this question, I will forward to the supporter.`
-            //         response = {
-            //             "text": responseText
-            //         }
-            //         curentUnhandledUser.add(msgSenderID);
-            //         callSendAPI(msgSenderID, response);
-            //     }
-            //     socket.emit("unhandled_message", {
-            //         id: msgSenderID,
-            //         message: msgText
-            //     })
-            // }
     }
 }
 
@@ -207,7 +162,7 @@ function handlePostback(sender_psid, received_postback) {
 }
 
 // Sends response messages via the Send API
-function callSendAPI(sender_psid, response) {
+function sendFacebookMess(sender_psid, response) {
     // Construct the message body
     let request_body = {
         "recipient": {
@@ -234,5 +189,5 @@ function callSendAPI(sender_psid, response) {
             }
         }
     );
-    mySQLdb.insert(conn, 'chatcontent', "m_" + uuidv4() + uuidv4(), "101714355046687", sender_psid, new Date(Date.now() + 1000), new Date(Date.now() + 1000), response.text);
+    mySQLdb.insert('chatcontent', "m_" + uuidv4() + uuidv4(), nconf.get('PAGE_ID'), sender_psid, new Date(Date.now() + 1000), new Date(Date.now() + 1000), response.text);
 }

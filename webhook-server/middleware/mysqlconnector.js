@@ -1,12 +1,19 @@
 const { query } = require('express');
-var mysql = require('mysql');
+const mysql = require('mysql');
+const nconf = require('nconf');
+nconf.argv().env();
+nconf.file({ file: 'config.json' });
 
-var con = mysql.createConnection({
-    host: "localhost",
-    user: "chatbot",
-    password: "1234",
-    port: 3306,
-    database: "chatbotdb"
+const conn = mysql.createConnection({
+    host: nconf.get('DATABASE_HOST'),
+    user: nconf.get('DATABASE_USER'),
+    password: nconf.get('DATABASE_PASS'),
+    port: nconf.get('DATABASE_PORT'),
+    database: nconf.get('DATABASE_NAME')
+});
+conn.connect(err => {
+    if (err) throw err;
+    console.log("MySQL database connected at port " + nconf.get('DATABASE_PORT') + "!");
 });
 
 function convertTime(time) {
@@ -23,49 +30,33 @@ function convertTime(time) {
     return returnResult;
 }
 
-function insert(connection, table, msgID, msgSenderID, msgReceiverID, msgTime, readTime, msgText, callback) {
+function insert(table, msgID, msgSenderID, msgReceiverID, msgTime, readTime, msgText, callback) {
 
     msgTime = convertTime(msgTime);
     readTime = convertTime(readTime);
     var sql = "INSERT into " + table + "(msgID, msgSenderID, msgReceiverID, msgTime, readTime, msgText) VALUES (" +
         "'" + msgID + "', '" + msgSenderID + "', '" + msgReceiverID + "', '" + msgTime + "', '" + readTime + "', '" + msgText + "')";
-    connection.query(sql, function(err, result) {
+    conn.query(sql, function(err, result) {
         if (err) throw err;
         if (callback) return callback(result.affectedRows);
     });
 }
 
-function remove(connection, table, msgID, callback) {
+function remove(table, msgID, callback) {
     var sql = "DELETE FROM " + table + " WHERE msgID = '" + msgID + "'";
-    connection.query(sql, function(err, result) {
+    conn.query(sql, function(err, result) {
         if (err) throw err;
         if (callback) return callback(result.affectedRows);
     });
 }
 
-async function getClientChat(connection, table, clientID, callback) {
+async function getClientChat(table, clientID, callback) {
     let sql = "SELECT * FROM " + table + " WHERE msgSenderID = '" + clientID + "' OR msgReceiverID = '" + clientID + "'";
-    // var sql = "SELECT * FROM " + table + " WHERE msgSenderID = '" + clientID + "' OR msgReceiverID = '" + clientID + "' ORDER BY msgTime ASC";
-    await connection.query(sql, function(err, result) {
+    await conn.query(sql, function(err, result) {
         if (err) throw err;
         if (callback) return callback(result);
     });
 }
-
-// getClientChat(con, 'chatcontent', '3181701225285372', function(result) {
-//     console.log(result);
-//     resultQuery = result;
-//     // console.log(resultQuery);
-// });
-
-// insert(table = 'chatcontent',
-//     msgID = 'm_L67mhQ1uH27Yli9YuYddp3Hn3Ua5CKDbLkEknIX3eV2EzTrIyI2RwE9SSJ5XfVCaKGnCjGVhUPBGguHikQVonA',
-//     sessionID = '101714355046687',
-//     msgSenderID = '3181701225285372',
-//     msgReceiverID = '101714355046687',
-//     msgTime = 1603307367129,
-//     readTime = 1603307367346,
-//     msgText = '1');
 
 module.exports = {
     insert,

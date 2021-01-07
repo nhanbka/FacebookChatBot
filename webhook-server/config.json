@@ -8,5 +8,6 @@
     "DATABASE_PORT": "3306",
     "DATABASE_USER": "chatbot",
     "DATABASE_HOST": "localhost",
-    "DATABASE_NAME": "chatbotdb"
+    "DATABASE_NAME": "chatbotdb",
+    "DATABASE_PASS": "1234"
 }
